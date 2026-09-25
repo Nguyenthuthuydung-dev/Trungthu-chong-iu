@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+<title>Trung Thu - Bảo Lâm ♡ Thùy Dung</title>
+
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+html,body{
+    width:100%;
+    height:100%;
+    overflow:hidden;
+    background:#02030b;
+    font-family:Arial, sans-serif;
+}
+
+body{
+    position:relative;
+}
+
+#space{
+    position:fixed;
+    inset:0;
+    width:100%;
+    height:100%;
+}
+
+#message{
+    position:fixed;
+    left:50%;
+    top:50%;
+    transform:translate(-50%,-50%);
+    width:92%;
+    text-align:center;
+    color:white;
+    z-index:10;
+    pointer-events:none;
+
+    font-size:clamp(25px,6vw,48px);
+    font-weight:600;
+    line-height:1.45;
+
+    opacity:0;
+    text-shadow:
+        0 0 8px rgba(255,255,255,.9),
+        0 0 25px rgba(255,80,180,.8),
+        0 0 50px rgba(100,120,255,.6);
+
+    transition:
+        opacity 1.2s ease,
+        transform 1.2s ease;
+}
+
+#message.show{
+    opacity:1;
+    transform:translate(-50%,-50%) scale(1);
+}
+
+#message.hide{
+    opacity:0;
+    transform:translate(-50%,-50%) scale(1.15);
+}
+
+#start{
+    position:fixed;
+    left:50%;
+    bottom:12%;
+    transform:translateX(-50%);
+
+    z-index:20;
+
+    border:none;
+    border-radius:999px;
+
+    padding:14px 30px;
+
+    color:white;
+    background:rgba(255,70,170,.18);
+
+    border:1px solid rgba(255,255,255,.5);
+
+    backdrop-filter:blur(10px);
+
+    font-size:16px;
+    letter-spacing:1px;
+
+    box-shadow:
+        0 0 15px rgba(255,80,190,.5),
+        inset 0 0 15px rgba(255,255,255,.08);
+
+    cursor:pointer;
+
+    transition:.3s;
+}
+
+#start:active{
+    transform:translateX(-50%) scale(.94);
+}
+
+#start.hide{
+    opacity:0;
+    pointer-events:none;
+}
+
+/* ánh sáng cuối */
+#heartGlow{
+    position:fixed;
+    left:50%;
+    top:50%;
+
+    width:30vmin;
+    height:30vmin;
+
+    transform:translate(-50%,-50%);
+
+    border-radius:50%;
+
+    background:
+        radial-gradient(
+            circle,
+            rgba(255,50,180,.22),
+            rgba(100,80,255,.08),
+            transparent 70%
+        );
+
+    filter:blur(20px);
+
+    opacity:0;
+
+    z-index:5;
+    pointer-events:none;
+
+    transition:opacity 2s;
+}
+
+#heartGlow.show{
+    opacity:1;
+}
+
+#signature{
+    position:fixed;
+    bottom:5%;
+    left:50%;
+    transform:translateX(-50%);
+
+    color:rgba(255,255,255,.7);
+
+    font-size:13px;
+    letter-spacing:3px;
+
+    opacity:0;
+
+    z-index:12;
+
+    transition:opacity 2s;
+}
+
+#signature.show{
+    opacity:1;
+}
+</style>
+</head>
+
+<body>
+
+<canvas id="space"></canvas>
+
+<div id="heartGlow"></div>
+
+<div id="message"></div>
+
+<button id="start">
+    ✨ Bắt đầu ✨
+</button>
+
+<div id="signature">
+    THÙY DUNG ♡ BẢO LÂM
+</div>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+<script>
+
+const canvas = document.getElementById("space");
+
+const renderer = new THREE.WebGLRenderer({
+    canvas:canvas,
+    antialias:true,
+    alpha:true
+});
+
+renderer.setPixelRatio(
+    Math.min(window.devicePixelRatio,2)
+);
+
+renderer.setSize(
+    window.innerWidth,
+    window.innerHeight
+);
+
+const scene = new THREE.Scene();
+
+const camera = new THREE.PerspectiveCamera(
+    65,
+    window.innerWidth/window.innerHeight,
+    0.1,
+    2000
+);
+
+camera.position.z = 65;
+
+
+/* =====================================
+   NGÂN HÀNG HẠT VŨ TRỤ
+===================================== */
+
+const PARTICLE_COUNT = 6000;
+
+const positions = new Float32Array(
+    PARTICLE_COUNT * 3
+);
+
+const colors = new Float32Array(
+    PARTICLE_COUNT * 3
+);
+
+const sizes = new Float32Array(
+    PARTICLE_COUNT
+);
+
+const velocities = [];
+
+const startPositions = [];
+
+const heartPositions = [];
+
+const tempColor = new THREE.Color();
+
+
+/* màu cầu vồng */
+function rainbowColor(index){
+
+    const hue =
+        (index / PARTICLE_COUNT)
+        +
+        Math.random()*0.08;
+
+    tempColor.setHSL(
+        hue % 1,
+        0.85,
+        0.62
+    );
+
+    return tempColor;
+}
+
+
+/* =====================================
+   TẠO HẠT VŨ TRỤ BAN ĐẦU
+===================================== */
+
+for(let i=0;i<PARTICLE_COUNT;i++){
+
+    const i3 = i*3;
+
+    const radius =
+        15 +
+        Math.random()*80;
+
+    const theta =
+        Math.random()*Math.PI*2;
+
+    const phi =
+        Math.acos(
+            2*Math.random()-1
+        );
+
+    const x =
+        radius *
+        Math.sin(phi) *
+        Math.cos(theta);
+
+    const y =
+        radius *
+        Math.sin(phi) *
+        Math.sin(theta);
+
+    const z =
+        radius *
+        Math.cos(phi);
+
+    positions[i3] = x;
+    positions[i3+1] = y;
+    positions[i3+2] = z;
+
+    startPositions.push(
+        new THREE.Vector3(x,y,z)
+    );
+
+    velocities.push({
+        x:(Math.random()-.5)*0.025,
+        y:(Math.random()-.5)*0.025,
+        z:(Math.random()-.5)*0.025
+    });
+
+    sizes[i] =
+        Math.random()*2.5 + .5;
+
+    const c = rainbowColor(i);
+
+    colors[i3] = c.r;
+    colors[i3+1] = c.g;
+    colors[i3+2] = c.b;
+}
+
+
+/* =====================================
+   TẠO HÌNH TRÁI TIM
+===================================== */
+
+function createHeart(){
+
+    const result=[];
+
+    /*
+       Công thức trái tim 3D
+    */
+
+    while(result.length < PARTICLE_COUNT){
+
+        const t =
+            Math.random()*Math.PI*2;
+
+        const scale =
+            Math.sqrt(Math.random());
+
+        const x =
+            16 *
+            Math.pow(Math.sin(t),3);
+
+        const y =
+            13*Math.cos(t)
+            -5*Math.cos(2*t)
+            -2*Math.cos(3*t)
+            -Math.cos(4*t);
+
+        /*
+           tạo độ dày 3D
+        */
+
+        const z =
+            (Math.random()-.5)
+            * 12
+            * scale;
+
+        const px =
+            x * scale * .75;
+
+        const py =
+            y * scale * .75;
+
+        const pz = z;
+
+        result.push(
+            new THREE.Vector3(
+                px,
+                py,
+                pz
+            )
+        );
+    }
+
+    return result;
+}
+
+
+const heart = createHeart();
+
+for(let i=0;i<PARTICLE_COUNT;i++){
+
+    heartPositions.push(
+        heart[i]
+    );
+}
+
+
+/* =====================================
+   PARTICLE SYSTEM
+===================================== */
+
+const geometry =
+    new THREE.BufferGeometry();
+
+geometry.setAttribute(
+    "position",
+    new THREE.BufferAttribute(
+        positions,
+        3
+    )
+);
+
+geometry.setAttribute(
+    "color",
+    new THREE.BufferAttribute(
+        colors,
+        3
+    )
+);
+
+geometry.setAttribute(
+    "size",
+    new THREE.BufferAttribute(
+        sizes,
+        1
+    )
+);
+
+
+/* texture hạt */
+const particleCanvas =
+    document.createElement("canvas");
+
+particleCanvas.width = 64;
+particleCanvas.height = 64;
+
+const pctx =
+    particleCanvas.getContext("2d");
+
+const gradient =
+    pctx.createRadialGradient(
+        32,32,0,
+        32,32,32
+    );
+
+gradient.addColorStop(
+    0,
+    "rgba(255,255,255,1)"
+);
+
+gradient.addColorStop(
+    .2,
+    "rgba(255,255,255,.9)"
+);
+
+gradient.addColorStop(
+    .5,
+    "rgba(255,120,220,.35)"
+);
+
+gradient.addColorStop(
+    1,
+    "rgba(0,0,0,0)"
+);
+
+pctx.fillStyle = gradient;
+
+pctx.fillRect(
+    0,0,64,64
+);
+
+const texture =
+    new THREE.CanvasTexture(
+        particleCanvas
+    );
+
+
+const material =
+    new THREE.PointsMaterial({
+
+        size:.65,
+
+        map:texture,
+
+        transparent:true,
+
+        opacity:.95,
+
+        vertexColors:true,
+
+        blending:
+            THREE.AdditiveBlending,
+
+        depthWrite:false
+    });
+
+
+const particles =
+    new THREE.Points(
+        geometry,
+        material
+    );
+
+scene.add(particles);
+
+
+/* =====================================
+   SAO NỀN
+===================================== */
+
+const starsGeometry =
+    new THREE.BufferGeometry();
+
+const starCount = 1200;
+
+const starPositions =
+    new Float32Array(
+        starCount*3
+    );
+
+for(let i=0;i<starCount;i++){
+
+    starPositions[i*3] =
+        (Math.random()-.5)*500;
+
+    starPositions[i*3+1] =
+        (Math.random()-.5)*500;
+
+    starPositions[i*3+2] =
+        (Math.random()-.5)*500;
+}
+
+starsGeometry.setAttribute(
+    "position",
+    new THREE.BufferAttribute(
+        starPositions,
+        3
+    )
+);
+
+const starsMaterial =
+    new THREE.PointsMaterial({
+
+        color:0xffffff,
+
+        size:.45,
+
+        transparent:true,
+
+        opacity:.7
+    });
+
+const stars =
+    new THREE.Points(
+        starsGeometry,
+        starsMaterial
+    );
+
+scene.add(stars);
+
+
+/* =====================================
+   TRẠNG THÁI
+===================================== */
+
+let heartMode = false;
+
+let animationStarted = false;
+
+let heartProgress = 0;
+
+let textIndex = 0;
+
+let textTimer = null;
+
+
+/* =====================================
+   CHỮ
+===================================== */
+
+const messages = [
+
+    "Chúc Bảo Lâm thương mến<br>của Thùy Dung trung thu này",
+
+    "Luôn luôn vui vẻ ✨",
+
+    "Luôn luôn khỏe mạnh 🌙",
+
+    "Hạnh phúc nhóoo 💗",
+
+    "Em xin lỗi và cảm ơn anh iu vì tất cả",
+
+    "Ở lại và đồng hành cùng em<br>đến hết đời nhée ❤️"
+
+];
+
+
+const message =
+    document.getElementById("message");
+
+
+function showMessage(){
+
+    if(textIndex >= messages.length){
+
+        setTimeout(
+            createHeartAnimation,
+            1200
+        );
+
+        return;
+    }
+
+    message.classList.remove("hide");
+
+    message.innerHTML =
+        messages[textIndex];
+
+    message.classList.add("show");
+
+    textIndex++;
+
+    textTimer =
+        setTimeout(()=>{
+
+            message.classList.remove(
+                "show"
+            );
+
+            message.classList.add(
+                "hide"
+            );
+
+            setTimeout(
+                showMessage,
+                1300
+            );
+
+        },4000);
+}
+
+
+/* =====================================
+   BẮT ĐẦU HÀNH TRÌNH
+===================================== */
+
+document
+.getElementById("start")
+.addEventListener(
+    "click",
+    ()=>{
+
+        if(animationStarted)
+            return;
+
+        animationStarted=true;
+
+        document
+        .getElementById("start")
+        .classList.add("hide");
+
+        showMessage();
+    }
+);
+
+
+/* =====================================
+   BIẾN HẠT THÀNH TRÁI TIM
+===================================== */
+
+function createHeartAnimation(){
+
+    message.classList.remove(
+        "show"
+    );
+
+    message.classList.add(
+        "hide"
+    );
+
+    document
+    .getElementById("heartGlow")
+    .classList.add("show");
+
+    heartMode=true;
+
+    heartProgress=0;
+
+    setTimeout(()=>{
+
+        document
+        .getElementById("signature")
+        .classList.add("show");
+
+    },3500);
+}
+
+
+/* =====================================
+   ANIMATION
+===================================== */
+
+const clock =
+    new THREE.Clock();
+
+function animate(){
+
+    requestAnimationFrame(
+        animate
+    );
+
+    const elapsed =
+        clock.getElapsedTime();
+
+
+    const pos =
+        geometry.attributes
+        .position.array;
+
+    const col =
+        geometry.attributes
+        .color.array;
+
+
+    /* -------------------------
+       TRẠNG THÁI VŨ TRỤ
+    ------------------------- */
+
+    if(!heartMode){
+
+        for(let i=0;i<PARTICLE_COUNT;i++){
+
+            const i3=i*3;
+
+            pos[i3] +=
+                velocities[i].x;
+
+            pos[i3+1] +=
+                velocities[i].y;
+
+            pos[i3+2] +=
+                velocities[i].z;
+
+
+            /*
+               giữ hạt trong không gian
+            */
+
+            if(pos[i3] > 100)
+                pos[i3] = -100;
+
+            if(pos[i3] < -100)
+                pos[i3] = 100;
+
+            if(pos[i3+1] > 100)
+                pos[i3+1] = -100;
+
+            if(pos[i3+1] < -100)
+                pos[i3+1] = 100;
+
+
+            /* đổi màu liên tục */
+
+            const hue =
+                (
+                    elapsed*.025
+                    +
+                    i/PARTICLE_COUNT
+                    +
+                    Math.sin(
+                        elapsed*.3+i
+                    )*.05
+                ) % 1;
+
+            tempColor.setHSL(
+                hue,
+                .85,
+                .62
+            );
+
+            col[i3] =
+                tempColor.r;
+
+            col[i3+1] =
+                tempColor.g;
+
+            col[i3+2] =
+                tempColor.b;
+        }
+
+    }
+
+
+    /* -------------------------
+       HỘI TỤ THÀNH TRÁI TIM
+    ------------------------- */
+
+    else{
+
+        heartProgress += .006;
+
+        if(heartProgress>1)
+            heartProgress=1;
+
+
+        for(let i=0;i<PARTICLE_COUNT;i++){
+
+            const i3=i*3;
+
+            const target =
+                heartPositions[i];
+
+            /*
+               easing
+            */
+
+            const ease =
+                heartProgress *
+                heartProgress *
+                (3 -
+                2*heartProgress);
+
+
+            /*
+               hạt bay từ vị trí
+               hiện tại về trái tim
+            */
+
+            pos[i3] +=
+                (target.x-pos[i3])
+                * .025;
+
+            pos[i3+1] +=
+                (target.y-pos[i3+1])
+                * .025;
+
+            pos[i3+2] +=
+                (target.z-pos[i3+2])
+                * .025;
+
+
+            /*
+               màu chuyển động liên tục
+            */
+
+            const hue =
+                (
+                    elapsed*.04
+                    +
+                    i/PARTICLE_COUNT
+                ) % 1;
+
+            tempColor.setHSL(
+                hue,
+                .9,
+                .62
+            );
+
+            col[i3] =
+                tempColor.r;
+
+            col[i3+1] =
+                tempColor.g;
+
+            col[i3+2] =
+                tempColor.b;
+        }
+
+
+        /*
+           trái tim xoay nhẹ
+        */
+
+        particles.rotation.y =
+            Math.sin(elapsed*.45)
+            *.18;
+
+        particles.rotation.x =
+            Math.sin(elapsed*.3)
+            *.06;
+    }
+
+
+    geometry
+    .attributes
+    .position
+    .needsUpdate=true;
+
+    geometry
+    .attributes
+    .color
+    .needsUpdate=true;
+
+
+    /*
+       chuyển động vũ trụ
+    */
+
+    if(!heartMode){
+
+        particles.rotation.y =
+            elapsed*.025;
+
+        particles.rotation.x =
+            Math.sin(elapsed*.12)
+            *.08;
+    }
+
+
+    stars.rotation.y =
+        elapsed*.008;
+
+
+    renderer.render(
+        scene,
+        camera
+    );
+}
+
+
+animate();
+
+
+/* =====================================
+   RESPONSIVE
+===================================== */
+
+window.addEventListener(
+    "resize",
+    ()=>{
+
+        camera.aspect =
+            window.innerWidth /
+            window.innerHeight;
+
+        camera.updateProjectionMatrix();
+
+        renderer.setSize(
+            window.innerWidth,
+            window.innerHeight
+        );
+    }
+);
+
+</script>
+
+</body>
+</html>
