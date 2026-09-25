@@ -27,60 +27,74 @@ canvas{
     height:100%;
 }
 
+.text{
+    position:fixed;
+    z-index:5;
+    top:50%;
+    left:50%;
+    transform:translate(-50%,-50%);
+    width:90%;
+    text-align:center;
+    color:white;
+    font-size:clamp(20px,5vw,34px);
+    font-weight:bold;
+    line-height:1.4;
+    text-shadow:
+        0 0 8px white,
+        0 0 20px #ff1744,
+        0 0 40px #2196ff;
+    opacity:0;
+    transition:opacity 1.2s ease;
+    pointer-events:none;
+}
+
+.text.show{
+    opacity:1;
+}
+
+.heartText{
+    position:fixed;
+    z-index:6;
+    left:50%;
+    top:78%;
+    transform:translateX(-50%);
+    width:95%;
+    text-align:center;
+    color:white;
+    font-size:clamp(22px,6vw,38px);
+    font-weight:bold;
+    opacity:0;
+    text-shadow:
+        0 0 8px #ff1744,
+        0 0 20px #ff1744,
+        0 0 40px #ff1744;
+    transition:opacity 2s ease;
+}
+
+.heartText.show{
+    opacity:1;
+}
+
 .start{
     position:fixed;
+    z-index:10;
     left:50%;
     top:50%;
     transform:translate(-50%,-50%);
-    z-index:10;
     padding:15px 30px;
-    border:1px solid rgba(255,255,255,.5);
+    border:1px solid rgba(255,255,255,.6);
     border-radius:30px;
-    background:rgba(0,0,0,.35);
+    background:rgba(0,0,0,.4);
     color:white;
     font-size:18px;
     cursor:pointer;
     box-shadow:0 0 25px rgba(255,255,255,.4);
-    transition:1s;
+    transition:opacity 1s;
 }
 
 .start.hide{
     opacity:0;
     pointer-events:none;
-}
-
-.message{
-    position:fixed;
-    z-index:5;
-    left:50%;
-    top:50%;
-    transform:translate(-50%,-50%);
-    width:90%;
-    text-align:center;
-    color:white;
-    opacity:0;
-    transition:2s;
-    pointer-events:none;
-    text-shadow:
-        0 0 8px #ff1744,
-        0 0 20px #ff1744,
-        0 0 40px #ff1744;
-}
-
-.message.show{
-    opacity:1;
-}
-
-.message p{
-    margin:9px 0;
-    font-size:clamp(17px,4.5vw,28px);
-    line-height:1.35;
-}
-
-.message p:last-child{
-    margin-top:20px;
-    font-size:clamp(22px,6vw,38px);
-    font-weight:bold;
 }
 </style>
 </head>
@@ -93,14 +107,10 @@ canvas{
     Bắt đầu hành trình ✨
 </button>
 
-<div class="message" id="message">
-    <p>Chúc Bảo Lâm thương mến của Thùy Dung trung thu này</p>
-    <p>Luôn luôn vui vẻ</p>
-    <p>Luôn luôn khỏe mạnh</p>
-    <p>Hạnh phúc nhóoo</p>
-    <p>Em xin lỗi và cảm ơn anh iu vì tất cả</p>
-    <p>Ở lại và đồng hành cùng em đến hết đời nhée</p>
-    <p>Thương anh nhiều lắm, Bảo Lâm</p>
+<div class="text" id="text"></div>
+
+<div class="heartText" id="heartText">
+    Thương anh nhiều lắm, Bảo Lâm
 </div>
 
 <script>
@@ -119,26 +129,24 @@ const colors = [
     "#ffd600"
 ];
 
-const COUNT = 900;
+const COUNT = 1100;
 
 let particles = [];
-let heart = [];
+let heartParticles = [];
 
 let started = false;
-let forming = false;
+let formingHeart = false;
 
-function resize(){
+const messages = [
+    "Chúc Bảo Lâm thương mến của Thùy Dung trung thu này",
+    "Luôn luôn vui vẻ",
+    "Luôn luôn khỏe mạnh",
+    "Hạnh phúc nhóoo",
+    "Em xin lỗi và cảm ơn anh iu vì tất cả",
+    "Ở lại và đồng hành cùng em đến hết đời nhée"
+];
 
-    W = innerWidth;
-    H = innerHeight;
-
-    canvas.width = W;
-    canvas.height = H;
-
-    createHeart();
-}
-
-window.addEventListener("resize",resize);
+let messageIndex = 0;
 
 function random(min,max){
     return Math.random()*(max-min)+min;
@@ -155,10 +163,10 @@ function createParticles(){
             x:random(0,W),
             y:random(0,H),
 
-            vx:random(-0.4,0.4),
-            vy:random(-0.4,0.4),
+            vx:random(-0.35,0.35),
+            vy:random(-0.35,0.35),
 
-            size:random(0.7,2.4),
+            size:random(.7,2.5),
 
             color:
                 colors[
@@ -167,7 +175,7 @@ function createParticles(){
                     )
                 ],
 
-            alpha:random(.4,1)
+            alpha:random(.35,1)
 
         });
     }
@@ -175,7 +183,7 @@ function createParticles(){
 
 function createHeart(){
 
-    heart=[];
+    heartParticles=[];
 
     const scale=Math.min(W,H)/38;
 
@@ -196,15 +204,13 @@ function createHeart(){
             -2*Math.cos(3*t)
             -Math.cos(4*t);
 
-        heart.push({
+        heartParticles.push({
 
             x:W/2+x*scale*fill,
 
             y:H/2-y*scale*fill,
 
-            size:random(.8,2.5),
-
-            color:"#ff1744"
+            size:random(.8,2.5)
 
         });
     }
@@ -212,6 +218,18 @@ function createHeart(){
 
 createParticles();
 createHeart();
+
+window.addEventListener("resize",()=>{
+
+    W=innerWidth;
+    H=innerHeight;
+
+    canvas.width=W;
+    canvas.height=H;
+
+    createHeart();
+
+});
 
 function drawParticle(p){
 
@@ -241,12 +259,12 @@ function animate(){
 
     requestAnimationFrame(animate);
 
-    ctx.fillStyle="rgba(0,3,11,.18)";
+    ctx.fillStyle="rgba(0,3,11,0.16)";
     ctx.fillRect(0,0,W,H);
 
     particles.forEach((p,i)=>{
 
-        if(!forming){
+        if(!formingHeart){
 
             p.x+=p.vx;
             p.y+=p.vy;
@@ -259,20 +277,19 @@ function animate(){
 
         }else{
 
-            const target=heart[i];
+            const target=heartParticles[i];
 
-            p.x+=(target.x-p.x)*.025;
-            p.y+=(target.y-p.y)*.025;
+            p.x+=(target.x-p.x)*0.025;
+            p.y+=(target.y-p.y)*0.025;
 
-            p.size+=(target.size-p.size)*.025;
+            p.size+=(target.size-p.size)*0.025;
 
-            p.color=target.color;
-            p.alpha=.9;
+            p.color="#ff1744";
+            p.alpha=1;
 
         }
 
         drawParticle(p);
-
     });
 }
 
@@ -281,8 +298,11 @@ animate();
 const start=
     document.getElementById("start");
 
-const message=
-    document.getElementById("message");
+const text=
+    document.getElementById("text");
+
+const heartText=
+    document.getElementById("heartText");
 
 start.addEventListener(
     "click",
@@ -297,17 +317,65 @@ function startJourney(){
 
     start.classList.add("hide");
 
+    /*
+       Hiện từng câu một
+    */
+
+    showNextMessage();
+}
+
+function showNextMessage(){
+
+    if(messageIndex >= messages.length){
+
+        /*
+           Sau câu thứ 6:
+           bắt đầu gom hạt thành trái tim
+        */
+
+        text.classList.remove("show");
+
+        setTimeout(()=>{
+
+            formingHeart=true;
+
+            /*
+               Đợi trái tim hình thành
+            */
+
+            setTimeout(()=>{
+
+                heartText.classList.add("show");
+
+            },4500);
+
+        },1200);
+
+        return;
+    }
+
+    text.textContent=
+        messages[messageIndex];
+
+    text.classList.add("show");
+
+    /*
+       Mỗi câu xuất hiện 3 giây
+    */
+
     setTimeout(()=>{
 
-        forming=true;
+        text.classList.remove("show");
 
-    },3500);
+        setTimeout(()=>{
 
-    setTimeout(()=>{
+            messageIndex++;
 
-        message.classList.add("show");
+            showNextMessage();
 
-    },7000);
+        },1000);
+
+    },3000);
 }
 
 document.body.addEventListener(
